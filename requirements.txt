@@ -1,0 +1,10 @@
+Django==3.2.0
+djongo==1.3.6
+pymongo==3.12.3
+python-dotenv
+Pillow
+django-crispy-forms
+sqlparse==0.2.4
+dnspython
+gunicorn
+whitenoise

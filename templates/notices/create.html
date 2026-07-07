@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if notice %}Edit Notice{% else %}Create Notice{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-text">
+    <h1>{% if notice %}<span class="text-gradient">Edit</span> Notice{% else %}Create <span class="text-gradient">Notice</span>{% endif %}</h1>
+    <p>{% if notice %}Update your announcement below.{% else %}Draft and publish important announcements to your team.{% endif %}</p>
+  </div>
+  <a href="{% url 'notice_list' %}" class="btn btn-outline" id="btn-back-list">
+    <i class="fas fa-arrow-left"></i> Back
+  </a>
+</div>
+
+<div style="display:grid; grid-template-columns:1.5fr 1fr; gap:20px; align-items:flex-start;">
+
+  <!-- ── Editor Panel ── -->
+  <div class="glass-card">
+    <div class="section-title" style="margin-bottom:24px;">
+      <div class="section-title-icon"><i class="fas fa-pen-nib"></i></div>
+      Notice Editor
+    </div>
+
+    <form method="post" id="noticeForm" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <!-- Title -->
+      <div class="form-group">
+        <label class="form-label" for="title">Notice Title <span style="color:var(--rose);">*</span></label>
+        <input type="text" name="title" id="title" class="form-control" required
+               value="{{ notice.title }}"
+               placeholder="e.g. Monthly Staff Meeting — April 2026">
+      </div>
+
+      <!-- Content -->
+      <div class="form-group">
+        <label class="form-label">Content <span style="color:var(--rose);">*</span></label>
+        <div id="editor" style="min-height:220px;">{{ notice.content|safe }}</div>
+        <textarea name="content" id="contentInput" style="display:none;"></textarea>
+      </div>
+
+      <!-- Priority + Expiry -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="priority">Priority Level</label>
+          <div class="form-icon-wrap">
+            <i class="fas fa-flag form-icon"></i>
+            <select name="priority" id="priority" class="form-control">
+              <option value="LOW"    {% if notice.priority == 'LOW'    %}selected{% endif %}>🟢 Low</option>
+              <option value="MEDIUM" {% if notice.priority == 'MEDIUM' or not notice %}selected{% endif %}>🟡 Medium</option>
+              <option value="HIGH"   {% if notice.priority == 'HIGH'   %}selected{% endif %}>🔴 High</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="expiry_date">Expiry Date <span style="color:var(--text-muted);">(optional)</span></label>
+          <div class="form-icon-wrap">
+            <i class="fas fa-calendar-xmark form-icon"></i>
+            <input type="datetime-local" name="expiry_date" id="expiry_date" class="form-control"
+                   value="{{ notice.expiry_date|date:'Y-m-d\TH:i' }}">
+          </div>
+        </div>
+      </div>
+
+      <!-- Target Departments -->
+      <div class="form-group">
+        <label class="form-label" for="target_departments">
+          Target Departments
+          <span style="color:var(--text-muted); font-weight:400;">(Hold Ctrl / ⌘ for multiple)</span>
+        </label>
+        <select name="target_departments" id="target_departments" class="form-control" multiple
+                style="height:110px; padding:8px;">
+          {% for dept in departments %}
+          <option value="{{ dept.id }}" {% if dept.id in target_ids %}selected{% endif %}>
+            {{ dept.name }}
+          </option>
+          {% endfor %}
+        </select>
+        <p class="form-hint"><i class="fas fa-info-circle"></i> Leave empty to target all departments.</p>
+      </div>
+
+      <!-- Attachment -->
+      <div class="form-group">
+        <label class="form-label" for="attachment">
+          <i class="fas fa-paperclip"></i> Attach File
+        </label>
+        <input type="file" name="attachment" id="attachment" class="form-control"
+               style="padding:9px 12px; cursor:pointer;">
+        {% if notice.attachment %}
+        <p class="form-hint" style="color:var(--cyan);">
+          <i class="fas fa-file"></i> Current: {{ notice.attachment.name }}
+        </p>
+        {% endif %}
+      </div>
+
+      <!-- Pin toggle -->
+      <div class="form-group">
+        <label class="check-wrap">
+          <input type="checkbox" name="is_pinned" {% if notice.is_pinned %}checked{% endif %}>
+          <span style="font-size:0.875rem; color:var(--text-secondary);">
+            <i class="fas fa-thumbtack" style="color:var(--amber);"></i>
+            Pin this notice to the top
+          </span>
+        </label>
+      </div>
+
+      <!-- Action buttons -->
+      <div style="display:flex; gap:12px; padding-top:8px; border-top:1px solid var(--glass-border); margin-top:4px;">
+        <button type="submit" name="status" value="PUBLISHED" class="btn btn-primary" style="padding:12px 24px;" id="btn-publish">
+          <i class="fas fa-paper-plane"></i> Publish Now
+        </button>
+        <button type="submit" name="status" value="DRAFT" class="btn btn-outline" style="padding:12px 24px;" id="btn-draft">
+          <i class="fas fa-floppy-disk"></i> Save as Draft
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ── Live Preview ── -->
+  <div style="position:sticky; top:90px;">
+    <div class="glass-card">
+      <div class="section-title" style="margin-bottom:22px;">
+        <div class="section-title-icon"><i class="fas fa-eye"></i></div>
+        Live Preview
+      </div>
+
+      <div style="background:rgba(255,255,255,0.02); border:1px dashed var(--glass-border); border-radius:var(--radius-md); padding:20px; min-height:340px;">
+        <span id="preview-badge" class="badge badge-medium">MEDIUM</span>
+        <h3 id="preview-title"
+            style="margin:14px 0 10px; font-size:1.3rem; font-weight:700; color:var(--text-primary); line-height:1.3;">
+          Untitled Notice
+        </h3>
+        <div id="preview-content"
+             style="font-size:0.875rem; color:var(--text-secondary); line-height:1.7;">
+          Editor content will appear here…
+        </div>
+      </div>
+
+      <!-- Preview meta -->
+      <div style="margin-top:16px; display:flex; flex-direction:column; gap:8px; font-size:0.82rem;">
+        <div style="display:flex; justify-content:space-between; color:var(--text-muted);">
+          <span>Author</span>
+          <span style="color:var(--text-primary); font-weight:500;">
+            {{ request.user.first_name }} {{ request.user.last_name }}
+          </span>
+        </div>
+        <div style="display:flex; justify-content:space-between; color:var(--text-muted);">
+          <span>Created</span>
+          <span style="color:var(--text-primary);">Today</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Publishing tips -->
+    <div class="glass-card" style="margin-top:16px; padding:18px 22px;">
+      <p style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:12px;">
+        <i class="fas fa-lightbulb" style="color:var(--amber);"></i> &nbsp;Tips
+      </p>
+      <ul style="font-size:0.815rem; color:var(--text-secondary); line-height:1.8; padding-left:16px;">
+        <li>Use <strong style="color:#fff;">High</strong> priority for urgent matters.</li>
+        <li>Pin notices that need long-term visibility.</li>
+        <li>Leave departments empty for company-wide notices.</li>
+        <li>Set an expiry date to auto-archive old notices.</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Init Quill
+  const quill = new Quill('#editor', {
+    theme: 'snow',
+    placeholder: 'Write your notice content here…',
+    modules: {
+      toolbar: [
+        [{ header: [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        ['link', 'blockquote', 'code-block'],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        [{ color: [] }, { background: [] }],
+        ['clean']
+      ]
+    }
+  });
+
+  const form          = document.querySelector('#noticeForm');
+  const contentInput  = document.querySelector('#contentInput');
+  const previewContent= document.querySelector('#preview-content');
+  const previewTitle  = document.querySelector('#preview-title');
+  const previewBadge  = document.querySelector('#preview-badge');
+
+  // Sync content → preview
+  quill.on('text-change', () => {
+    const html = quill.root.innerHTML;
+    contentInput.value = html;
+    previewContent.innerHTML = (html === '<p><br></p>' || !html.trim())
+      ? 'Editor content will appear here…'
+      : html;
+  });
+
+  // Sync title → preview
+  document.querySelector('#title').addEventListener('input', e => {
+    previewTitle.textContent = e.target.value.trim() || 'Untitled Notice';
+  });
+
+  // Sync priority → preview badge
+  document.querySelector('#priority').addEventListener('change', e => {
+    const p = e.target.value;
+    previewBadge.textContent = p;
+    previewBadge.className   = `badge badge-${p.toLowerCase()}`;
+  });
+
+  // On submit
+  form.onsubmit = () => {
+    contentInput.value = quill.root.innerHTML;
+    return true;
+  };
+
+  // Pre-fill preview if editing
+  (function init() {
+    const existingTitle = document.querySelector('#title').value;
+    if (existingTitle) previewTitle.textContent = existingTitle;
+    const existingHtml = quill.root.innerHTML;
+    if (existingHtml && existingHtml !== '<p><br></p>') {
+      previewContent.innerHTML = existingHtml;
+    }
+  })();
+</script>
+{% endblock %}

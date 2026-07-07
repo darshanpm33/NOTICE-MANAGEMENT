@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block login_content %}
+<div class="login-page">
+  <!-- Background blobs already rendered from base -->
+
+  <div class="login-split">
+
+    <!-- Brand Panel -->
+    <div class="login-brand">
+      <div class="login-brand-glow"></div>
+
+      <div class="login-brand-logo">
+        <div class="login-brand-logo-icon">
+          <i class="fas fa-bullhorn"></i>
+        </div>
+        <span class="login-brand-name">NoticeHub</span>
+      </div>
+
+      <div>
+        <h1 class="login-brand-headline">
+          Keep your team <span class="text-gradient">informed</span> &amp; aligned.
+        </h1>
+        <p class="login-brand-quote">
+          A modern, role-based corporate notice management platform — built for speed, clarity, and seamless communication.
+        </p>
+
+        <div class="login-brand-features">
+          <div class="login-feature">
+            <div class="login-feature-dot"><i class="fas fa-bolt"></i></div>
+            Real-time notifications &amp; read receipts
+          </div>
+          <div class="login-feature">
+            <div class="login-feature-dot"><i class="fas fa-shield-halved"></i></div>
+            Role-based access control (Admin / Manager / Employee)
+          </div>
+          <div class="login-feature">
+            <div class="login-feature-dot"><i class="fas fa-chart-pie"></i></div>
+            Analytics dashboard &amp; department reports
+          </div>
+          <div class="login-feature">
+            <div class="login-feature-dot"><i class="fas fa-paperclip"></i></div>
+            Rich-text notices with file attachments
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form Panel -->
+    <div class="login-form-panel">
+      <h2 class="login-form-title">Welcome back 👋</h2>
+      <p class="login-form-sub">Sign in to your NoticeHub account</p>
+
+      <form method="post" action="{% url 'login' %}" id="login-form">
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label class="form-label" for="email">Work Email</label>
+          <div class="form-icon-wrap">
+            <i class="fas fa-envelope form-icon"></i>
+            <input type="email" name="email" id="email" class="form-control"
+                   required placeholder="you@company.com" autocomplete="email">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="form-icon-wrap">
+            <i class="fas fa-lock form-icon"></i>
+            <input type="password" name="password" id="password" class="form-control"
+                   required placeholder="••••••••" autocomplete="current-password">
+          </div>
+        </div>
+
+        <div class="remember-row">
+          <label>
+            <input type="checkbox" name="remember" style="accent-color:var(--indigo);">
+            Remember me
+          </label>
+          <a href="#" class="forgot-link">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:13px;" id="btn-login">
+          <i class="fas fa-arrow-right-to-bracket"></i>
+          Sign In to NoticeHub
+        </button>
+      </form>
+
+      {% if messages %}
+      {% for message in messages %}
+      <div class="login-error">
+        <i class="fas fa-circle-exclamation"></i>
+        {{ message }}
+      </div>
+      {% endfor %}
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const loginForm = document.getElementById('login-form');
+    const emailInput = document.getElementById('email');
+    const rememberCheckbox = document.querySelector('input[name="remember"]');
+
+    // 1. Check if email is saved in localStorage
+    const savedEmail = localStorage.getItem('noticehub_remember_email');
+    if (savedEmail) {
+      emailInput.value = savedEmail;
+      rememberCheckbox.checked = true;
+      // Trigger a small visual pulse to show it's auto-filled
+      emailInput.classList.add('auto-filled');
+      setTimeout(() => emailInput.classList.remove('auto-filled'), 1500);
+    }
+
+    // 2. Save/Clear on Submit
+    loginForm.addEventListener('submit', function() {
+      if (rememberCheckbox.checked) {
+        localStorage.setItem('noticehub_remember_email', emailInput.value);
+      } else {
+        localStorage.removeItem('noticehub_remember_email');
+      }
+    });
+  });
+</script>
+
+<style>
+  @keyframes pulse-fill {
+    0% { background-color: rgba(99, 102, 241, 0.1); }
+    50% { background-color: rgba(99, 102, 241, 0.2); }
+    100% { background-color: transparent; }
+  }
+  .form-control.auto-filled {
+    animation: pulse-fill 1.5s ease-out;
+    border-color: var(--indigo);
+  }
+</style>
+{% endblock %}

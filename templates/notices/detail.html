@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ notice.title }}{% endblock %}
+
+{% block content %}
+<div style="display:grid; grid-template-columns:1fr 300px; gap:20px; align-items:flex-start;">
+
+  <!-- ── Main Article ── -->
+  <div>
+    <div class="glass-card" style="padding:0; overflow:hidden;">
+
+      <!-- Hero -->
+      <div class="notice-detail-hero">
+        <!-- Back + Actions row -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+          <a href="{% url 'notice_list' %}" class="btn btn-outline btn-sm" id="btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Notices
+          </a>
+          {% if is_author %}
+          <div style="display:flex; gap:8px;">
+            <a href="{% url 'notice_edit' notice.pk %}" class="btn btn-outline btn-sm" id="btn-edit-notice">
+              <i class="fas fa-pen"></i> Edit
+            </a>
+            <a href="{% url 'notice_delete' notice.pk %}" class="btn btn-danger btn-sm"
+               onclick="return confirm('Permanently delete this notice?')" id="btn-delete-notice">
+              <i class="fas fa-trash"></i>
+            </a>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Badge row -->
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+          <span class="badge badge-{{ notice.priority|lower }}">{{ notice.priority }} Priority</span>
+          {% if notice.is_pinned %}
+          <span class="badge" style="background:rgba(245,158,11,0.1); color:var(--amber); border-color:rgba(245,158,11,0.25);">
+            <i class="fas fa-thumbtack"></i> Pinned
+          </span>
+          {% endif %}
+          <span class="badge badge-draft">{{ notice.status }}</span>
+        </div>
+
+        <h1 class="notice-detail-title">{{ notice.title }}</h1>
+
+        <div class="notice-meta-row">
+          <div class="notice-meta-item">
+            <img src="{% if notice.author.profile_pic %}{{ notice.author.profile_pic.url }}{% else %}{% static 'img/user-avatar.svg' %}{% endif %}"
+                 alt="Author" class="notice-meta-avatar">
+            <span>{{ notice.author.first_name }} {{ notice.author.last_name }}</span>
+          </div>
+          <div class="notice-meta-item">
+            <i class="far fa-calendar-alt"></i>
+            {{ notice.created_at|date:"d M, Y · H:i" }}
+          </div>
+          {% if notice.expiry_date %}
+          <div class="notice-meta-item" style="color:var(--rose);">
+            <i class="fas fa-hourglass-end"></i>
+            Expires {{ notice.expiry_date|date:"d M, Y" }}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div style="height:1px; background:var(--glass-border); margin:0 36px;"></div>
+
+      <!-- Content Body -->
+      <div class="notice-body">
+        <div style="padding:28px 0;">
+          {{ notice.content|safe }}
+        </div>
+      </div>
+
+      <!-- Attachment -->
+      {% if notice.attachment %}
+      <div class="attachment-section">
+        <p style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:10px;">
+          <i class="fas fa-paperclip"></i> &nbsp;Attachment
+        </p>
+        <a href="{{ notice.attachment.url }}" class="btn btn-outline" download id="btn-download-attachment">
+          <i class="fas fa-file-arrow-down"></i>
+          Download File
+        </a>
+      </div>
+      {% endif %}
+
+      <!-- Comments -->
+      <div class="comments-section">
+        <div class="section-row" style="margin-bottom:18px;">
+          <div class="section-title">
+            <div class="section-title-icon"><i class="fas fa-comments"></i></div>
+            Comments
+            <span style="background:rgba(168, 85, 247, 0.12); color:var(--primary); font-size:0.72rem; padding:2px 9px; border-radius:20px; margin-left:4px;">{{ comments.count }}</span>
+          </div>
+
+        </div>
+
+        <!-- Comment form -->
+        <form method="post" action="{% url 'add_comment' notice.pk %}" class="comment-form">
+          {% csrf_token %}
+          <img src="{% if request.user.profile_pic %}{{ request.user.profile_pic.url }}{% else %}{% static 'img/user-avatar.svg' %}{% endif %}"
+               alt="You" class="comment-avatar" style="margin-top:2px;">
+          <input type="text" name="content" class="comment-input" required
+                 placeholder="Share your thoughts…" id="comment-input">
+          <button type="submit" class="btn btn-primary" id="btn-post-comment">Post</button>
+        </form>
+
+        <!-- Comments list -->
+        <div style="display:flex; flex-direction:column;">
+          {% for comment in comments %}
+          <div class="comment-item">
+            <img src="{% if comment.user.profile_pic %}{{ comment.user.profile_pic.url }}{% else %}{% static 'img/user-avatar.svg' %}{% endif %}"
+                 alt="{{ comment.user.first_name }}" class="comment-avatar">
+            <div>
+              <div>
+                <span class="comment-name">{{ comment.user.first_name }} {{ comment.user.last_name }}</span>
+                <span class="comment-time">{{ comment.created_at|date:"d M · H:i" }}</span>
+              </div>
+              <p class="comment-text">{{ comment.content }}</p>
+            </div>
+          </div>
+          {% empty %}
+          <div style="text-align:center; padding:28px; color:var(--text-muted); font-size:0.875rem;">
+            <i class="far fa-comment-dots" style="font-size:2rem; margin-bottom:10px; display:block; opacity:0.4;"></i>
+            No comments yet. Be the first!
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Right Sidebar ── -->
+  <div style="position:sticky; top:90px; display:flex; flex-direction:column; gap:16px;">
+
+    <!-- Target Departments -->
+    <div class="glass-card detail-sidebar-card">
+      <p class="detail-sidebar-label"><i class="fas fa-building" style="margin-right:5px;"></i>Target Departments</p>
+      <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">
+        {% for dept in notice.target_departments.all %}
+        <span class="dept-tag"><i class="fas fa-circle" style="font-size:0.4rem;"></i> {{ dept.name }}</span>
+        {% empty %}
+        <span class="dept-tag"><i class="fas fa-globe"></i> All Departments</span>
+        {% endfor %}
+      </div>
+      <div style="margin-top:16px; display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; justify-content:space-between; font-size:0.82rem;">
+          <span style="color:var(--text-muted);">Status</span>
+          <span style="color:var(--text-primary); font-weight:600;">{{ notice.status }}</span>
+        </div>
+        {% if notice.expiry_date %}
+        <div style="display:flex; justify-content:space-between; font-size:0.82rem;">
+          <span style="color:var(--text-muted);">Expires</span>
+          <span style="color:var(--rose); font-weight:600;">{{ notice.expiry_date|date:"d M, Y" }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Read Receipts -->
+    <div class="glass-card detail-sidebar-card">
+      <p class="detail-sidebar-label">
+        <i class="fas fa-eye" style="margin-right:5px;"></i>
+        Read by &nbsp;
+        <span style="background:rgba(16,185,129,0.1); color:var(--emerald); padding:2px 8px; border-radius:20px; font-weight:700;">
+          {{ read_by.count }}
+        </span>
+      </p>
+      <div style="display:flex; flex-direction:column; max-height:260px; overflow-y:auto; padding-right:4px; margin-top:10px;">
+        {% for read in read_by %}
+        <div class="read-receipt-item">
+          <span class="read-receipt-name">
+            <i class="fas fa-check" style="color:var(--emerald); margin-right:5px; font-size:0.7rem;"></i>
+            {{ read.user.first_name }} {{ read.user.last_name }}
+          </span>
+          <span class="read-receipt-time">{{ read.read_at|date:"d M H:i" }}</span>
+        </div>
+        {% empty %}
+        <p style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:12px 0;">No read receipts yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

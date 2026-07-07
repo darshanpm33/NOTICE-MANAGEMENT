@@ -1,0 +1,218 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="NoticeHub — Premium Company Notice Management System">
+  <title>NoticeHub | {% block title %}{% endblock %}</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Quill Rich Text Editor -->
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <!-- Aurora Background -->
+  <div class="bg-blobs" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="blob blob-4"></div>
+  </div>
+
+  {% if request.user.is_authenticated %}
+  <!-- ── Sidebar ── -->
+  <nav class="sidebar" role="navigation" aria-label="Main navigation">
+
+    <!-- Logo -->
+    <a href="{% url 'dashboard' %}" class="sidebar-logo">
+      <div class="sidebar-logo-icon">
+        <i class="fas fa-bullhorn"></i>
+      </div>
+      <span class="sidebar-logo-name">NoticeHub</span>
+    </a>
+
+    <!-- Navigation Links -->
+    <ul class="nav-links" role="list">
+      <span class="nav-section-label">Main</span>
+
+      <li>
+        <a href="{% url 'dashboard' %}"
+           class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+           id="nav-dashboard">
+          <div class="nav-link-icon"><i class="fas fa-th-large"></i></div>
+          <span>Dashboard</span>
+        </a>
+      </li>
+
+      <li>
+        <a href="{% url 'notice_list' %}"
+           class="nav-link {% if 'notice' in request.resolver_match.url_name %}active{% endif %}"
+           id="nav-notices">
+          <div class="nav-link-icon"><i class="fas fa-file-alt"></i></div>
+          <span>Notices</span>
+        </a>
+      </li>
+
+      <li>
+        <a href="{% url 'notifications' %}"
+           class="nav-link {% if request.resolver_match.url_name == 'notifications' %}active{% endif %}"
+           id="nav-notifications">
+          <div class="nav-link-icon">
+            <i class="fas fa-bell"></i>
+          </div>
+          <span>Notifications</span>
+          {% if unread_notif_count > 0 %}
+          <span style="margin-left:auto; background:var(--rose); color:#fff; font-size:0.65rem; font-weight:800; padding:2px 7px; border-radius:20px;">{{ unread_notif_count }}</span>
+          {% endif %}
+        </a>
+      </li>
+
+      <li>
+        <a href="{% url 'profile' %}"
+           class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}"
+           id="nav-profile">
+          <div class="nav-link-icon"><i class="fas fa-user-circle"></i></div>
+          <span>Profile</span>
+        </a>
+      </li>
+
+      {% if request.user.role == 'ADMIN' %}
+      <span class="nav-section-label">Admin</span>
+
+      <li>
+        <a href="{% url 'user_management' %}"
+           class="nav-link {% if request.resolver_match.url_name == 'user_management' %}active{% endif %}"
+           id="nav-users">
+          <div class="nav-link-icon"><i class="fas fa-users"></i></div>
+          <span>Users</span>
+        </a>
+      </li>
+
+      <li>
+        <a href="{% url 'department_management' %}"
+           class="nav-link {% if request.resolver_match.url_name == 'department_management' %}active{% endif %}"
+           id="nav-departments">
+          <div class="nav-link-icon"><i class="fas fa-building"></i></div>
+          <span>Departments</span>
+        </a>
+      </li>
+
+      <li>
+        <a href="{% url 'reports' %}"
+           class="nav-link {% if request.resolver_match.url_name == 'reports' %}active{% endif %}"
+           id="nav-reports">
+          <div class="nav-link-icon"><i class="fas fa-chart-pie"></i></div>
+          <span>Reports</span>
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+
+    <!-- Footer -->
+    <div class="sidebar-footer">
+      <!-- Current user -->
+      <div class="sidebar-footer-user">
+        <img src="{% if request.user.profile_pic %}{{ request.user.profile_pic.url }}{% else %}{% static 'img/user-avatar.svg' %}{% endif %}"
+             alt="Avatar" class="sidebar-footer-avatar">
+        <div>
+          <div class="sidebar-footer-name">{{ request.user.first_name }} {{ request.user.last_name }}</div>
+          <div class="sidebar-footer-role">{{ request.user.role|title }}</div>
+        </div>
+      </div>
+      <!-- Logout -->
+      <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="logout-btn" id="btn-logout">
+          <i class="fas fa-arrow-right-from-bracket"></i>
+          <span>Sign Out</span>
+        </button>
+      </form>
+    </div>
+  </nav>
+
+  <!-- ── Main Content ── -->
+  <main class="main-content" role="main">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="search-box">
+        <i class="fas fa-search search-box-icon"></i>
+        <input type="text" id="liveSearch" placeholder="Search notices…" autocomplete="off">
+      </div>
+
+      <div class="user-nav">
+        <!-- Notification Bell -->
+        <a href="{% url 'notifications' %}" class="notif-bell" id="topbar-bell" title="Notifications">
+          <i class="fas fa-bell"></i>
+          {% if unread_notif_count > 0 %}
+          <span class="notif-badge">{{ unread_notif_count }}</span>
+          {% endif %}
+        </a>
+
+        <div class="topbar-divider"></div>
+
+        <!-- User pill -->
+        <a href="{% url 'profile' %}" class="user-profile" id="topbar-profile">
+          <img src="{% if request.user.profile_pic %}{{ request.user.profile_pic.url }}{% else %}{% static 'img/user-avatar.svg' %}{% endif %}"
+               alt="Avatar" class="user-avatar">
+          <span class="admin-name">{{ request.user.first_name }} {{ request.user.last_name }}</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Flash Messages -->
+    {% if messages %}
+    <div class="messages" role="alert">
+      {% for message in messages %}
+      <div class="message {{ message.tags }}">
+        {% if message.tags == 'success' %}<i class="fas fa-circle-check"></i>
+        {% elif message.tags == 'error'  %}<i class="fas fa-circle-xmark"></i>
+        {% elif message.tags == 'warning'%}<i class="fas fa-triangle-exclamation"></i>
+        {% else %}<i class="fas fa-circle-info"></i>{% endif %}
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  {% else %}
+  {% block login_content %}{% endblock %}
+  {% endif %}
+
+  <!-- Scripts -->
+  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+  <script src="{% static 'js/main.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+
+  <script>
+    // Auto-dismiss messages after 5s
+    document.querySelectorAll('.message').forEach(el => {
+      setTimeout(() => {
+        el.style.transition = 'opacity 0.5s, transform 0.5s';
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(-8px)';
+        setTimeout(() => el.remove(), 500);
+      }, 5000);
+    });
+  </script>
+</body>
+</html>

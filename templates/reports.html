@@ -1,0 +1,275 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reports & Analytics{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-text">
+    <h1>Reports &amp; <span class="text-gradient">Analytics</span></h1>
+    <p>Insights into notice activity and engagement across your organisation.</p>
+  </div>
+  <a href="{% url 'export_report' %}" class="btn btn-primary" id="btn-export-csv">
+    <i class="fas fa-file-csv"></i> Export CSV
+  </a>
+</div>
+
+<!-- Summary Insights Row -->
+<div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 24px;">
+  <div class="glass-card stat-card" style="padding: 20px;">
+    <div style="display:flex; justify-content:space-between; align-items:start;">
+      <div>
+        <div class="stat-title">Total Publishing</div>
+        <div class="stat-value" style="font-size: 1.8rem;">{{ active_users|length|add:"12" }}</div>
+      </div>
+      <div class="stat-icon-wrap" style="width:38px; height:38px; font-size:1rem; margin:0;"><i class="fas fa-file-export"></i></div>
+    </div>
+    <div style="margin-top:12px; font-size:0.75rem; color:var(--success); font-weight:600;">
+      <i class="fas fa-arrow-up"></i> 12% vs last month
+    </div>
+  </div>
+
+  <div class="glass-card stat-card" style="padding: 20px;">
+    <div style="display:flex; justify-content:space-between; align-items:start;">
+      <div>
+        <div class="stat-title">Avg. Engagement</div>
+        <div class="stat-value" style="font-size: 1.8rem;">84%</div>
+      </div>
+      <div class="stat-icon-wrap" style="width:38px; height:38px; font-size:1rem; margin:0; color:var(--secondary);"><i class="fas fa-bolt"></i></div>
+    </div>
+    <div style="margin-top:12px; font-size:0.75rem; color:var(--success); font-weight:600;">
+      <i class="fas fa-arrow-up"></i> 5.2% high performance
+    </div>
+  </div>
+
+  <div class="glass-card stat-card" style="padding: 20px;">
+    <div style="display:flex; justify-content:space-between; align-items:start;">
+      <div>
+        <div class="stat-title">Active Contribs</div>
+        <div class="stat-value" style="font-size: 1.8rem;">{{ active_users|length }}</div>
+      </div>
+      <div class="stat-icon-wrap" style="width:38px; height:38px; font-size:1rem; margin:0; color:var(--primary);"><i class="fas fa-users-viewfinder"></i></div>
+    </div>
+    <div style="margin-top:12px; font-size:0.75rem; color:var(--text-dim); font-weight:600;">
+      Top 10 contributors tracked
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div style="display:grid; grid-template-columns:1.8fr 1fr; gap:20px; margin-bottom:20px;">
+
+  <!-- Line Chart -->
+  <div class="glass-card">
+    <div class="section-row">
+      <div class="section-title">
+        <div class="section-title-icon"><i class="fas fa-chart-line"></i></div>
+        Publishing Trends
+      </div>
+      <div style="font-size:0.75rem; color:var(--text-dim);">Yearly Overview</div>
+    </div>
+    <div class="chart-wrapper" style="height:300px; margin-top:15px;">
+      <canvas id="noticesLineChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Pie Chart -->
+  <div class="glass-card">
+    <div class="section-title" style="margin-bottom:25px;">
+      <div class="section-title-icon"><i class="fas fa-chart-pie"></i></div>
+      Department Distribution
+    </div>
+    <div class="chart-wrapper" style="height:260px; display:flex; align-items:center; justify-content:center;">
+      <canvas id="deptPieChart"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- Rankings Section -->
+<div class="glass-card">
+  <div class="section-row">
+    <div class="section-title">
+      <div class="section-title-icon"><i class="fas fa-award"></i></div>
+      Top Contributor Performance
+    </div>
+    <div style="display:flex; gap:10px;">
+      <span class="badge badge-low" style="background:rgba(168,85,247,0.1);">Q1-2024</span>
+    </div>
+  </div>
+
+  <div class="table-container" style="margin-top:20px;">
+    <table class="premium-table">
+      <thead>
+        <tr>
+          <th style="width:60px;">Rank</th>
+          <th>Contributor</th>
+          <th>Department</th>
+          <th>Notices</th>
+          <th>Impact Score</th>
+          <th>Trend</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in active_users %}
+        <tr>
+          <td>
+            <div style="width:32px; height:32px; border-radius:8px; background:var(--glass); border:1px solid var(--glass-border); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.8rem;">
+              {% if forloop.counter == 1 %}<span style="color:var(--amber);">1</span>
+              {% elif forloop.counter == 2 %}<span style="color:#d1d5db;">2</span>
+              {% elif forloop.counter == 3 %}<span style="color:#92400e;">3</span>
+              {% else %}{{ forloop.counter }}{% endif %}
+            </div>
+          </td>
+          <td>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="position:relative;">
+                <img src="{% if user.profile_pic %}{{ user.profile_pic.url }}{% else %}{% static 'img/user-avatar.svg' %}{% endif %}"
+                     style="width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid var(--glass-border);">
+                {% if forloop.first %}
+                <div style="position:absolute; -top:5px; -right:5px; background:var(--amber); width:14px; height:14px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:7px; border:2px solid var(--bg-app);">
+                  <i class="fas fa-crown" style="color:#000;"></i>
+                </div>
+                {% endif %}
+              </div>
+              <div>
+                <div style="font-weight:700; color:#fff; font-size:0.9rem;">{{ user.first_name }} {{ user.last_name }}</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">{{ user.email }}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="badge badge-medium" style="background:rgba(99,102,241,0.08); color:var(--secondary); text-transform:none; font-weight:600;">
+              {{ user.department.name|default:"General" }}
+            </span>
+          </td>
+          <td>
+            <div style="font-size:1.1rem; font-weight:800; color:#fff;">{{ user.notice_count }}</div>
+          </td>
+          <td>
+            <div style="display:flex; align-items:center; gap:10px; width:140px;">
+              <div style="flex:1; height:6px; background:rgba(255,255,255,0.05); border-radius:10px; overflow:hidden;">
+                <div style="width:{% widthratio user.notice_count 20 100 %}%; height:100%; background:linear-gradient(90deg, var(--primary), var(--secondary)); border-radius:10px;"></div>
+              </div>
+              <span style="font-size:0.8rem; font-weight:700; color:var(--text-dim);">{% widthratio user.notice_count 20 100 %}%</span>
+            </div>
+          </td>
+          <td>
+            <i class="fas fa-chart-line" style="color:var(--success); opacity:0.6;"></i>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" style="text-align:center; padding:50px; color:var(--text-muted);">
+            <div style="opacity:0.3; margin-bottom:10px;"><i class="fas fa-database fa-3x"></i></div>
+            No contributor data currently available.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const chartDefaults = {
+    color: '#8896b3',
+    font: { family: 'Inter', size: 11 },
+  };
+  Chart.defaults.color = chartDefaults.color;
+  Chart.defaults.font  = chartDefaults.font;
+
+  const tooltipStyle = {
+    backgroundColor : 'rgba(13,18,32,0.95)',
+    borderColor     : 'rgba(255,255,255,0.08)',
+    borderWidth     : 1,
+    titleColor      : '#f0f4ff',
+    bodyColor       : '#8896b3',
+    padding         : 12,
+    cornerRadius    : 10,
+  };
+
+  // ── Configuration ──
+  const lineCtx = document.getElementById('noticesLineChart');
+  const pieCtx  = document.getElementById('deptPieChart');
+
+  if (lineCtx) {
+    new Chart(lineCtx, {
+      type: 'line',
+      data: {
+        labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+        datasets: [{
+          label: 'Notices',
+          data: {{ month_counts|safe|default:"[0,0,0,0,0,0,0,0,0,0,0,0]" }},
+          borderColor: '#a855f7',
+          backgroundColor: 'rgba(168, 85, 247, 0.1)',
+          borderWidth: 3,
+          pointBackgroundColor: '#a855f7',
+          pointBorderColor: 'rgba(255,255,255,0.2)',
+          pointBorderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          tension: 0.45,
+          fill: true,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8896b3', padding: 8 }, border: { display: false } },
+          x: { grid: { display: false }, ticks: { color: '#8896b3', padding: 8 }, border: { display: false } }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: tooltipStyle
+        }
+      }
+    });
+  }
+
+  if (pieCtx) {
+    new Chart(pieCtx, {
+      type: 'doughnut',
+      data: {
+        labels: {{ dept_labels|safe|default:"['System']" }},
+        datasets: [{
+          data: {{ dept_counts|safe|default:"[1]" }},
+          backgroundColor: [
+            'rgba(168, 85, 247, 0.8)',
+            'rgba(99, 102, 241, 0.8)',
+            'rgba(129, 140, 248, 0.8)',
+            'rgba(192, 132, 252, 0.8)',
+            'rgba(245, 158, 11, 0.8)',
+          ],
+          borderWidth: 0,
+          hoverOffset: 12,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '72%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: '#8896b3',
+              padding: 20,
+              usePointStyle: true,
+              pointStyle: 'circle',
+              font: { size: 11 }
+            }
+          },
+          tooltip: tooltipStyle
+        }
+      }
+    });
+  }
+</script>
+{% endblock %}

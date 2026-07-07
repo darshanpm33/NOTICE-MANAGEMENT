@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Department Management{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-text">
+    <h1>Department <span class="text-gradient">Management</span></h1>
+    <p>Organise your company structure and manage team departments.</p>
+  </div>
+  <button onclick="document.getElementById('addDeptModal').style.display='flex'"
+          class="btn btn-primary" id="btn-add-dept">
+    <i class="fas fa-plus"></i> Add Department
+  </button>
+</div>
+
+<!-- Department Cards -->
+{% if departments %}
+<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(290px, 1fr)); gap:18px;">
+  {% for dept in departments %}
+  <div class="glass-card" style="transition:transform var(--duration-med) var(--ease-spring), border-color var(--duration-fast);">
+    <!-- Card Top Bar accent -->
+    <div style="height:3px; background:var(--grad-primary); border-radius:3px; margin:-28px -28px 24px -28px; border-radius:var(--radius-lg) var(--radius-lg) 0 0;"></div>
+
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+      <div style="width:46px; height:46px; border-radius:var(--radius-sm);
+                  background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.2);
+                  display:flex; align-items:center; justify-content:center;
+                  font-size:1.3rem; color:var(--indigo);">
+        <i class="fas fa-building"></i>
+      </div>
+      <a href="{% url 'delete_department' dept.pk %}"
+         onclick="return confirm('Permanently delete {{ dept.name }}?')"
+         class="btn btn-danger btn-sm btn-icon" title="Delete department">
+        <i class="fas fa-trash"></i>
+      </a>
+    </div>
+
+    <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin-bottom:8px;">
+      {{ dept.name }}
+    </h3>
+    <p style="color:var(--text-secondary); font-size:0.845rem; line-height:1.6; margin-bottom:20px; min-height:42px;">
+      {{ dept.description|truncatewords:18|default:"No description provided." }}
+    </p>
+
+    <!-- Stats row -->
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:auto; padding-top:16px; border-top:1px solid var(--glass-border);">
+      <div style="text-align:center;">
+        <div style="font-size:1.25rem; font-weight:800; color:var(--text-primary); line-height:1;">
+          {{ dept.member_count }}
+        </div>
+        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:3px; text-transform:uppercase; letter-spacing:0.5px;">
+          Members
+        </div>
+      </div>
+      <div style="text-align:center; border-left:1px solid var(--glass-border); border-right:1px solid var(--glass-border);">
+        <div style="font-size:1.25rem; font-weight:800; color:var(--cyan); line-height:1;">
+          {{ dept.notice_count }}
+        </div>
+        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:3px; text-transform:uppercase; letter-spacing:0.5px;">
+          Notices
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:0.82rem; font-weight:600; color:var(--text-primary); line-height:1.2;">
+          {{ dept.manager.first_name|default:"—" }}
+        </div>
+        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:3px; text-transform:uppercase; letter-spacing:0.5px;">
+          Manager
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="empty-state">
+  <div class="empty-state-icon"><i class="fas fa-building"></i></div>
+  <h3>No Departments Yet</h3>
+  <p>Create your first department to organise your team.</p>
+  <button onclick="document.getElementById('addDeptModal').style.display='flex'"
+          class="btn btn-primary" style="margin-top:20px;">
+    <i class="fas fa-plus"></i> Add First Department
+  </button>
+</div>
+{% endif %}
+
+<!-- ── Add Department Modal ── -->
+<div id="addDeptModal"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75);
+            z-index:2000; justify-content:center; align-items:center;
+            backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);"
+     onclick="if(event.target===this) this.style.display='none'">
+
+  <div class="glass-card" style="width:100%; max-width:480px; padding:32px; animation:fadeInPop 0.3s var(--ease-spring);">
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+      <div>
+        <h2 style="font-size:1.2rem; font-weight:800; margin-bottom:3px;">New Department</h2>
+        <p style="font-size:0.82rem; color:var(--text-muted);">Add a new organisational unit</p>
+      </div>
+      <button onclick="document.getElementById('addDeptModal').style.display='none'"
+              style="background:rgba(255,255,255,0.06); border:1px solid var(--glass-border); color:var(--text-secondary);
+                     width:34px; height:34px; border-radius:50%; cursor:pointer; font-size:0.85rem;
+                     display:flex; align-items:center; justify-content:center;"
+              id="btn-close-dept-modal">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <form method="post" action="{% url 'add_department' %}">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="form-label" for="dept-name">Department Name <span style="color:var(--rose);">*</span></label>
+        <div class="form-icon-wrap">
+          <i class="fas fa-building form-icon"></i>
+          <input type="text" name="name" id="dept-name" class="form-control" required
+                 placeholder="e.g. Human Resources">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="dept-desc">Description</label>
+        <textarea name="description" id="dept-desc" class="form-control"
+                  rows="3" placeholder="Brief description of this department's role…"
+                  style="resize:none;"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="manager_add">Assign Manager</label>
+        <div class="form-icon-wrap">
+          <i class="fas fa-user-tie form-icon"></i>
+          <select name="manager" id="manager_add" class="form-control">
+            <option value="">Select a manager…</option>
+            {% for user in users %}
+            <option value="{{ user.id }}">{{ user.first_name }} {{ user.last_name }} — {{ user.email }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary"
+              style="width:100%; justify-content:center; padding:13px; margin-top:8px;"
+              id="btn-create-dept">
+        <i class="fas fa-plus"></i> Create Department
+      </button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

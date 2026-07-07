@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-text">
+    <h1>My <span class="text-gradient">Profile</span></h1>
+    <p>Manage your personal information and account settings.</p>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1.5fr 1fr; gap:20px; align-items:flex-start;">
+
+  <!-- ── Profile Form ── -->
+  <div class="glass-card">
+    <div class="section-title" style="margin-bottom:28px;">
+      <div class="section-title-icon"><i class="fas fa-user-pen"></i></div>
+      Account Details
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="profile-form">
+      {% csrf_token %}
+
+      <!-- Avatar section -->
+      <div style="display:flex; align-items:center; gap:22px; margin-bottom:30px; padding-bottom:24px; border-bottom:1px solid var(--glass-border);">
+        <div style="position:relative; display:inline-block;">
+          <img id="avatar-preview"
+               src="{% if request.user.profile_pic %}{{ request.user.profile_pic.url }}{% else %}{% static 'img/user-avatar.svg' %}{% endif %}"
+               alt="Avatar"
+               style="width:90px; height:90px; border-radius:50%; object-fit:cover;
+                      border:3px solid rgba(99,102,241,0.5);
+                      box-shadow:0 0 30px rgba(99,102,241,0.25);">
+          <label for="profile_pic"
+                 style="position:absolute; bottom:0; right:0;
+                        width:28px; height:28px; border-radius:50%;
+                        background:var(--grad-primary); border:2px solid var(--bg-deep);
+                        display:flex; align-items:center; justify-content:center;
+                        cursor:pointer; font-size:0.7rem; color:#fff; box-shadow:var(--shadow-sm);">
+            <i class="fas fa-camera"></i>
+          </label>
+          <input type="file" name="profile_pic" id="profile_pic" style="display:none;" accept="image/*">
+        </div>
+        <div>
+          <div style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin-bottom:4px;">
+            {{ request.user.first_name }} {{ request.user.last_name }}
+          </div>
+          <div style="font-size:0.82rem; color:var(--text-muted); margin-bottom:10px;">{{ request.user.email }}</div>
+          <span class="badge {% if request.user.role == 'ADMIN' %}badge-high{% elif request.user.role == 'MANAGER' %}badge-medium{% else %}badge-low{% endif %}">
+            {{ request.user.role|title }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Name fields -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="first_name">First Name</label>
+          <input type="text" name="first_name" id="first_name" class="form-control"
+                 value="{{ request.user.first_name }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="last_name">Last Name</label>
+          <input type="text" name="last_name" id="last_name" class="form-control"
+                 value="{{ request.user.last_name }}" required>
+        </div>
+      </div>
+
+      <!-- Email (read-only) -->
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <div class="form-icon-wrap">
+          <i class="fas fa-envelope form-icon"></i>
+          <input type="email" id="email" class="form-control"
+                 value="{{ request.user.email }}" disabled
+                 style="opacity:0.5; cursor:not-allowed;">
+        </div>
+        <p class="form-hint"><i class="fas fa-shield-halved"></i> Email is managed by your administrator.</p>
+      </div>
+
+      <!-- Password section -->
+      <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--glass-border);">
+        <p style="font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:16px;">
+          <i class="fas fa-key" style="color:var(--amber); margin-right:5px;"></i> Change Password
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="new_password">New Password</label>
+          <div class="form-icon-wrap">
+            <i class="fas fa-lock form-icon"></i>
+            <input type="password" name="new_password" id="new_password" class="form-control"
+                   placeholder="Leave blank to keep current password">
+          </div>
+          <p class="form-hint">Minimum 8 characters recommended.</p>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="padding:12px 28px; margin-top:8px;" id="btn-save-profile">
+        <i class="fas fa-floppy-disk"></i> Save Changes
+      </button>
+    </form>
+  </div>
+
+  <!-- ── Activity Log ── -->
+  <div style="position:sticky; top:90px;">
+    <div class="glass-card">
+      <div class="section-title" style="margin-bottom:20px;">
+        <div class="section-title-icon"><i class="fas fa-clock-rotate-left"></i></div>
+        Recent Activity
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:0; max-height:480px; overflow-y:auto; padding-right:4px;">
+        {% for log in logs %}
+        <div style="display:flex; gap:14px; padding:14px 0; border-bottom:1px solid rgba(255,255,255,0.04); position:relative;">
+          <div style="width:34px; height:34px; border-radius:50%; background:rgba(168, 85, 247, 0.1);
+                      border:1px solid rgba(168, 85, 247, 0.2); display:flex; align-items:center;
+                      justify-content:center; color:var(--primary); font-size:0.75rem; flex-shrink:0;">
+            <i class="fas fa-bolt"></i>
+          </div>
+          <div style="flex:1;">
+
+            <p style="font-size:0.858rem; font-weight:600; color:var(--text-primary); margin-bottom:3px; line-height:1.4;">
+              {{ log.action }}
+            </p>
+            {% if log.target %}
+            <p style="font-size:0.78rem; color:var(--text-secondary);">{{ log.target }}</p>
+            {% endif %}
+            <p style="font-size:0.74rem; color:var(--text-muted); margin-top:5px;">
+              <i class="far fa-clock"></i> {{ log.timestamp|date:"d M, Y · H:i" }}
+            </p>
+          </div>
+        </div>
+        {% empty %}
+        <div style="text-align:center; padding:32px 0;">
+          <i class="fas fa-clipboard-list" style="font-size:2.5rem; color:var(--text-muted); opacity:0.3; margin-bottom:12px; display:block;"></i>
+          <p style="color:var(--text-muted); font-size:0.875rem;">No activity recorded yet.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Live avatar preview
+  document.getElementById('profile_pic').addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById('avatar-preview').src = e.target.result;
+      };
+      reader.readAsDataURL(this.files[0]);
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-text">
+    <h1>Notifications</h1>
+    <p>Stay on top of every update and announcement.</p>
+  </div>
+  <a href="{% url 'mark_all_notifications_read' %}" class="btn btn-outline" id="btn-mark-all-read">
+    <i class="fas fa-check-double"></i> Mark all as read
+  </a>
+</div>
+
+<div class="glass-card" style="padding:0; overflow:hidden;">
+
+  {% if notifications %}
+  <!-- Summary bar -->
+  <div style="padding:14px 24px; background:rgba(255,255,255,0.02); border-bottom:1px solid var(--glass-border); display:flex; align-items:center; justify-content:space-between;">
+    <span style="font-size:0.82rem; color:var(--text-muted);">
+      Showing <strong style="color:var(--text-primary);">{{ notifications|length }}</strong> notification{{ notifications|length|pluralize }}
+    </span>
+    {% if unread_notif_count > 0 %}
+    <span style="background:rgba(0,229,255,0.08); color:var(--cyan); border:1px solid rgba(0,229,255,0.2); font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:20px; letter-spacing:0.5px;">
+      {{ unread_notif_count }} UNREAD
+    </span>
+    {% else %}
+    <span style="background:rgba(16,185,129,0.08); color:var(--emerald); border:1px solid rgba(16,185,129,0.2); font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:20px;">
+      ALL CAUGHT UP ✓
+    </span>
+    {% endif %}
+  </div>
+
+  <!-- Notification List -->
+  {% for notif in notifications %}
+  <div class="notif-item {% if not notif.is_read %}unread{% endif %}">
+    <div class="notif-icon" style="{% if not notif.is_read %}background:rgba(0,229,255,0.1); color:var(--cyan);{% else %}background:rgba(255,255,255,0.04); color:var(--text-muted);{% endif %}">
+      <i class="fas fa-bell"></i>
+    </div>
+    <div style="flex:1;">
+      <p class="notif-message">{{ notif.message }}</p>
+      <div class="notif-time">
+        <i class="far fa-clock"></i>
+        {{ notif.created_at|date:"d M, Y · H:i" }}
+        {% if not notif.is_read %}
+        <span class="notif-new-tag">NEW</span>
+        {% endif %}
+      </div>
+    </div>
+    {% if notif.is_read %}
+    <i class="fas fa-check" style="color:var(--emerald); font-size:0.8rem; opacity:0.6; flex-shrink:0;"></i>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  {% else %}
+  <!-- Empty State -->
+  <div class="empty-state" style="border:none;">
+    <div class="empty-state-icon">
+      <i class="fas fa-bell-slash"></i>
+    </div>
+    <h3>All Clear!</h3>
+    <p>You don't have any notifications right now.<br>We'll let you know when something new arrives.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

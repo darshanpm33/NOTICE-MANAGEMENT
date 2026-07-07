@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}User Management{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-text">
+    <h1>User <span class="text-gradient">Management</span></h1>
+    <p>Manage team members, roles and department assignments.</p>
+  </div>
+  <button onclick="document.getElementById('addUserModal').style.display='flex'"
+          class="btn btn-primary" id="btn-add-user">
+    <i class="fas fa-user-plus"></i> Add User
+  </button>
+</div>
+
+<!-- Users Table -->
+<div class="glass-card">
+  <div class="section-row" style="margin-bottom:4px;">
+    <div class="section-title">
+      <div class="section-title-icon"><i class="fas fa-users"></i></div>
+      All Members
+      <span style="background:rgba(99,102,241,0.12); color:#818cf8; font-size:0.72rem; padding:2px 9px; border-radius:20px; margin-left:4px;">{{ users|length }}</span>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Member</th>
+          <th>Email</th>
+          <th>Department</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <img src="{% if user.profile_pic %}{{ user.profile_pic.url }}{% else %}{% static 'img/user-avatar.svg' %}{% endif %}"
+                   style="width:34px; height:34px; border-radius:50%; object-fit:cover; border:1.5px solid var(--glass-border); flex-shrink:0;">
+              <div>
+                <div style="font-weight:600; font-size:0.875rem;">{{ user.first_name }} {{ user.last_name }}</div>
+              </div>
+            </div>
+          </td>
+          <td style="color:var(--text-secondary); font-size:0.85rem;">{{ user.email }}</td>
+          <td>
+            {% if user.department %}
+            <span class="dept-tag"><i class="fas fa-circle" style="font-size:0.35rem;"></i> {{ user.department.name }}</span>
+            {% else %}
+            <span style="color:var(--text-muted); font-size:0.82rem;">—</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge
+              {% if user.role == 'ADMIN' %}badge-high
+              {% elif user.role == 'MANAGER' %}badge-medium
+              {% else %}badge-low{% endif %}">
+              {{ user.get_role_display }}
+            </span>
+          </td>
+          <td>
+            {% if user.is_active %}
+            <span style="display:flex; align-items:center; gap:6px; color:var(--emerald); font-size:0.82rem; font-weight:600;">
+              <span style="width:7px; height:7px; border-radius:50%; background:var(--emerald); box-shadow:0 0 8px var(--emerald);"></span>
+              Active
+            </span>
+            {% else %}
+            <span style="display:flex; align-items:center; gap:6px; color:var(--rose); font-size:0.82rem; font-weight:600;">
+              <span style="width:7px; height:7px; border-radius:50%; background:var(--rose);"></span>
+              Inactive
+            </span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'toggle_user_active' user.pk %}" class="btn btn-outline btn-sm"
+               title="{% if user.is_active %}Deactivate{% else %}Activate{% endif %}">
+              {% if user.is_active %}
+              <i class="fas fa-user-slash"></i> Deactivate
+              {% else %}
+              <i class="fas fa-user-check"></i> Activate
+              {% endif %}
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" style="text-align:center; color:var(--text-muted); padding:40px;">
+            <i class="fas fa-users-slash" style="font-size:2.5rem; display:block; margin-bottom:12px; opacity:0.3;"></i>
+            No users found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── Add User Modal ── -->
+<div id="addUserModal"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75);
+            z-index:2000; justify-content:center; align-items:center;
+            backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);"
+     onclick="if(event.target===this) this.style.display='none'">
+
+  <div class="glass-card" style="width:100%; max-width:500px; padding:32px; animation:fadeInPop 0.3s var(--ease-spring);">
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+      <div>
+        <h2 style="font-size:1.25rem; font-weight:800; margin-bottom:3px;">Add New User</h2>
+        <p style="font-size:0.82rem; color:var(--text-muted);">Create a team member account</p>
+      </div>
+      <button onclick="document.getElementById('addUserModal').style.display='none'"
+              style="background:rgba(255,255,255,0.06); border:1px solid var(--glass-border); color:var(--text-secondary);
+                     width:34px; height:34px; border-radius:50%; cursor:pointer; font-size:0.85rem; display:flex; align-items:center; justify-content:center;"
+              id="btn-close-modal">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <form method="post" action="{% url 'add_user' %}">
+      {% csrf_token %}
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="first_name">First Name</label>
+          <input type="text" name="first_name" id="first_name" class="form-control" required placeholder="John">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="last_name">Last Name</label>
+          <input type="text" name="last_name" id="last_name" class="form-control" required placeholder="Doe">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="email_add">Work Email</label>
+        <div class="form-icon-wrap">
+          <i class="fas fa-envelope form-icon"></i>
+          <input type="email" name="email" id="email_add" class="form-control" required placeholder="john@company.com">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password_add">Initial Password</label>
+        <div class="form-icon-wrap">
+          <i class="fas fa-lock form-icon"></i>
+          <input type="password" name="password" id="password_add" class="form-control" required placeholder="••••••••">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="role_add">Role</label>
+          <select name="role" id="role_add" class="form-control">
+            <option value="EMPLOYEE">Employee</option>
+            <option value="MANAGER">Manager</option>
+            <option value="ADMIN">Admin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="dept_add">Department</label>
+          <select name="department" id="dept_add" class="form-control">
+            <option value="">No Department</option>
+            {% for dept in departments %}
+            <option value="{{ dept.id }}">{{ dept.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:13px; margin-top:4px;" id="btn-create-user">
+        <i class="fas fa-user-plus"></i> Create Account
+      </button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

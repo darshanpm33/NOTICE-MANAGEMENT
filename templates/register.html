@@ -1,0 +1,110 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NoticeHub | Create Account</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+</head>
+<body>
+  <div class="bg-blobs"></div>
+
+  <div class="login-page">
+    <div class="login-split">
+      <!-- Brand Panel -->
+      <div class="login-brand">
+        <div class="login-brand-top">
+          <div class="login-brand-logo">
+            <div class="sidebar-logo-icon">
+              <i class="fas fa-bullhorn"></i>
+            </div>
+            <span class="login-brand-name">NoticeHub</span>
+          </div>
+          <h1 class="login-brand-headline">Join our premium <span class="text-gradient" style="background:var(--grad-primary); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">communication</span> network.</h1>
+          <p class="login-brand-quote">Create an account to stay informed, engaged, and aligned with your team.</p>
+        </div>
+
+        <div class="login-brand-features">
+          <div class="login-feature">
+            <div class="login-feature-dot"><i class="fas fa-check"></i></div>
+            <span>Personalized notice feed</span>
+          </div>
+          <div class="login-feature">
+            <div class="login-feature-dot"><i class="fas fa-check"></i></div>
+            <span>Real-time desktop notifications</span>
+          </div>
+          <div class="login-feature">
+            <div class="login-feature-dot"><i class="fas fa-check"></i></div>
+            <span>Department-specific insights</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Panel -->
+      <div class="login-form-panel">
+        <h2 class="login-form-title">Create Account</h2>
+        <p class="login-form-sub">Enter your details to get started.</p>
+
+        <form method="POST">
+          {% csrf_token %}
+          
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px;">
+            <div class="form-group">
+              <label style="display:block; font-size:0.8rem; color:var(--text-dim); margin-bottom:6px;">First Name</label>
+              <div class="search-box" style="width:100%;">
+                <i class="fas fa-user"></i>
+                <input type="text" name="first_name" placeholder="John" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label style="display:block; font-size:0.8rem; color:var(--text-dim); margin-bottom:6px;">Last Name</label>
+              <div class="search-box" style="width:100%;">
+                <i class="fas fa-user"></i>
+                <input type="text" name="last_name" placeholder="Doe" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:15px;">
+            <label style="display:block; font-size:0.8rem; color:var(--text-dim); margin-bottom:6px;">Work Email</label>
+            <div class="search-box" style="width:100%;">
+              <i class="fas fa-envelope"></i>
+              <input type="email" name="email" placeholder="you@company.com" required>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:20px;">
+            <label style="display:block; font-size:0.8rem; color:var(--text-dim); margin-bottom:6px;">Password</label>
+            <div class="search-box" style="width:100%;">
+              <i class="fas fa-lock"></i>
+              <input type="password" name="password" placeholder="••••••••" required>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:14px;">
+            <i class="fas fa-user-plus"></i> Create Account
+          </button>
+
+          <div style="margin-top:25px; text-align:center; font-size:0.9rem; color:var(--text-dim);">
+            Already have an account? <a href="{% url 'login' %}" class="forgot-link">Sign In</a>
+          </div>
+        </form>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="login-error">
+          <i class="fas fa-exclamation-circle"></i>
+          {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</body>
+</html>

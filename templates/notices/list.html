@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Notices{% endblock %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="page-header">
+  <div class="page-header-text">
+    <h1>Corporate Notices</h1>
+    <p>Browse and stay updated with the latest company announcements.</p>
+  </div>
+  {% if request.user.role != 'EMPLOYEE' %}
+  <a href="{% url 'notice_create' %}" class="btn btn-primary" id="btn-create-notice">
+    <i class="fas fa-plus"></i> Create Notice
+  </a>
+  {% endif %}
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-bar">
+  <form method="get" id="filterForm" style="display:flex; gap:10px; flex-wrap:wrap; flex:1; align-items:center;">
+
+    <div class="filter-select-wrap">
+      <i class="fas fa-building"></i>
+      <select name="department" onchange="this.form.submit()" id="filter-dept">
+        <option value="">All Departments</option>
+        {% for dept in departments %}
+        <option value="{{ dept.id }}" {% if request.GET.department == dept.id|stringformat:"i" %}selected{% endif %}>
+          {{ dept.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="filter-select-wrap">
+      <i class="fas fa-flag"></i>
+      <select name="priority" onchange="this.form.submit()" id="filter-priority">
+        <option value="">All Priorities</option>
+        <option value="HIGH" {% if request.GET.priority == 'HIGH' %}selected{% endif %}>?? High</option>
+        <option value="MEDIUM" {% if request.GET.priority == 'MEDIUM' %}selected{% endif %}>?? Medium</option>
+        <option value="LOW" {% if request.GET.priority == 'LOW' %}selected{% endif %}>?? Low</option>
+      </select>
+    </div>
+
+    <div class="filter-select-wrap">
+      <i class="fas fa-circle-dot"></i>
+      <select name="status" onchange="this.form.submit()" id="filter-status">
+        <option value="PUBLISHED" {% if request.GET.status == 'PUBLISHED' or not request.GET.status %}selected{% endif %}>
+          Published</option>
+        {% if request.user.role != 'EMPLOYEE' %}
+        <option value="DRAFT" {% if request.GET.status == 'DRAFT' %}selected{% endif %}>My Drafts</option>
+        {% endif %}
+      </select>
+    </div>
+
+    <a href="{% url 'notice_list' %}" class="btn btn-outline btn-sm" id="btn-reset-filter">
+      <i class="fas fa-rotate-left"></i> Reset
+    </a>
+  </form>
+</div>
+
+<!-- Notices Grid -->
+<div class="notice-grid" id="noticeListContainer">
+  {% for notice in notices %}
+  <div class="glass-card notice-card" data-title="{{ notice.title|lower }}"
+    data-content="{{ notice.content|striptags|lower }}">
+
+    <div class="notice-card-body">
+      <div class="notice-card-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="badge badge-{{ notice.priority|lower }}">{{ notice.priority }}</span>
+          {% for dept in notice.target_departments.all %}
+          <span class="dept-tag" style="padding: 2px 8px; font-size: 0.68rem;"><i class="fas fa-building"
+              style="font-size:0.6rem;"></i> {{ dept.name }}</span>
+          {% empty %}
+          <span class="dept-tag" style="padding: 2px 8px; font-size: 0.68rem;"><i class="fas fa-globe"
+              style="font-size:0.6rem;"></i> All</span>
+          {% endfor %}
+        </div>
+        <div class="notice-card-indicators">
+          {% if notice.is_pinned %}
+          <i class="fas fa-thumbtack pin-icon" title="Pinned"></i>
+          {% endif %}
+          {% if not notice.is_read %}
+          <span class="unread-dot" title="Unread"></span>
+          {% endif %}
+        </div>
+      </div>
+
+      <a href="{% url 'notice_detail' notice.pk %}" style="text-decoration:none; display:block;">
+        <h3 class="notice-card-title">{{ notice.title }}</h3>
+        <p class="notice-card-excerpt">
+          {{ notice.content|striptags|truncatewords:28 }}
+        </p>
+      </a>
+    </div>
+
+    <div class="notice-card-footer">
+      <div class="notice-card-author">
+        <img
+          src="{% if notice.author.profile_pic %}{{ notice.author.profile_pic.url }}{% else %}{% static 'img/user-avatar.svg' %}{% endif %}"
+          alt="{{ notice.author.first_name }}" width="26" height="26"
+          style="width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+        {{ notice.author.first_name }} {{ notice.author.last_name }}
+      </div>
+      <div class="notice-card-date">
+        <i class="far fa-calendar"></i>
+        {{ notice.created_at|date:"M j, Y" }}
+      </div>
+    </div>
+  </div>
+
+  {% empty %}
+  <div class="empty-state">
+    <div class="empty-state-icon"><i class="fas fa-inbox"></i></div>
+    <h3>No Notices Found</h3>
+    <p>There are no notices matching your current filters.</p>
+    {% if request.user.role != 'EMPLOYEE' %}
+    <a href="{% url 'notice_create' %}" class="btn btn-primary" style="margin-top:20px;" id="btn-empty-create">
+      <i class="fas fa-plus"></i> Create First Notice
+    </a>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const searchInput = document.getElementById('liveSearch');
+  searchInput.addEventListener('input', function () {
+    const q = this.value.toLowerCase().trim();
+    document.querySelectorAll('.notice-card').forEach(card => {
+      const match = card.dataset.title.includes(q) || card.dataset.content.includes(q);
+      card.style.display = match ? '' : 'none';
+    });
+  });
+</script>
+{% endblock %}
